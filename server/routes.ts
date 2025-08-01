@@ -437,6 +437,98 @@ app.get('/api/hsd-tickets/recent', async (req, res) => {
     }
   });
 
+  // PRD Code Generation endpoint
+  app.post('/api/code/generate-from-prd', async (req: Request, res: Response) => {
+    try {
+      const { prdSolutionSummary, language, framework } = req.body;
+
+      if (!prdSolutionSummary || !language) {
+        return res.status(400).json({ error: 'PRD solution summary and language are required' });
+      }
+
+      console.log(`Generating ${language} code from PRD solution summary`);
+
+      // Use Ollama to generate code from PRD
+      const ollamaService = (await import('./services/ollama.js')).default;
+      
+      // Generate main application code
+      const mainCode = await ollamaService.generateCode(
+        `High Level Solution Summary: ${prdSolutionSummary}`,
+        language,
+        framework
+      );
+
+      // Generate supporting files
+      const modelCode = await ollamaService.generateCode(
+        `Create data models and schemas for: ${prdSolutionSummary}`,
+        language,
+        framework
+      );
+
+      const apiCode = await ollamaService.generateCode(
+        `Create API endpoints and routes for: ${prdSolutionSummary}`,
+        language,
+        framework
+      );
+
+      const getFileExtension = (lang: string) => {
+        const extensions: Record<string, string> = {
+          javascript: 'js',
+          typescript: 'ts',
+          python: 'py',
+          java: 'java',
+          go: 'go',
+          rust: 'rs',
+          csharp: 'cs',
+          cpp: 'cpp',
+        };
+        return extensions[lang] || 'txt';
+      };
+
+      const ext = getFileExtension(language);
+
+      const result = {
+        language,
+        framework,
+        files: [
+          {
+            path: `main.${ext}`,
+            content: mainCode,
+            description: 'Main application entry point implementing the PRD solution'
+          },
+          {
+            path: `models.${ext}`,
+            content: modelCode,
+            description: 'Data models and schemas based on PRD requirements'
+          },
+          {
+            path: `api.${ext}`,
+            content: apiCode,
+            description: 'API endpoints and routes for the solution'
+          }
+        ],
+        setupInstructions: [
+          language === 'python' ? 'Install Python 3.8+' : 'Install runtime dependencies',
+          language === 'python' ? 'pip install -r requirements.txt' : language === 'javascript' || language === 'typescript' ? 'npm install' : 'Install package dependencies',
+          'Set up environment variables',
+          'Initialize database (if required)'
+        ],
+        runCommands: [
+          language === 'python' ? 'python main.py' : language === 'javascript' || language === 'typescript' ? 'npm start' : 'Run the application',
+          'Access the application at http://0.0.0.0:5000'
+        ]
+      };
+
+      res.json(result);
+    } catch (error) {
+      console.error('PRD code generation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate code from PRD', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // PRD Generator workflow
   app.post('/api/workflows/prd-generator', async (req: Request, res: Response) => {
     try {
