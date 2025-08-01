@@ -42,6 +42,15 @@ args = "npm run dev"
 task = "shell.exec"
 args = "cd python_agents && python start_server.py"
 
+[[workflows.workflow]]
+name = "Code Architecture Generator"
+author = 45858577
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
 [[ports]]
 localPort = 5000
 externalPort = 80

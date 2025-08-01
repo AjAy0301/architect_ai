@@ -378,6 +378,65 @@ app.get('/api/hsd-tickets/recent', async (req, res) => {
     }
   });
 
+  // Code Architecture Generator workflow
+  app.post('/api/workflows/code-architecture', async (req: Request, res: Response) => {
+    try {
+      const { projectName, description, template, techStack, engineType = 'python-langchain' } = req.body;
+
+      if (!projectName) {
+        return res.status(400).json({ error: 'Project name is required' });
+      }
+
+      console.log(`Starting code architecture generation using ${engineType}`);
+
+      if (engineType === 'python-langchain') {
+        // Use Python LangChain agents
+        const result = await pythonAgentsClient.executeWorkflow('code-architecture', {
+          projectName,
+          description,
+          template,
+          techStack,
+          engineType
+        });
+
+        res.json(result);
+      } else {
+        // Use Node.js implementation (fallback)
+        const workflowId = uuidv4();
+
+        const initialState: WorkflowState = {
+          workflowId,
+          projectName,
+          description,
+          template,
+          techStack,
+          currentStep: 'architecture-analysis',
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await storage.saveWorkflowState(workflowId, initialState);
+
+        const context: AgentContext = {
+          workflowId,
+          broadcast: (message) => {
+            console.log(`Broadcasting: ${JSON.stringify(message)}`);
+          },
+        };
+
+        const result = await langChainWorkflowEngine.executeWorkflow(initialState, context);
+        res.json(result);
+      }
+    } catch (error) {
+      console.error('Code Architecture Generator workflow error:', error);
+      res.status(500).json({ 
+        error: 'Code architecture generation failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // PRD Generator workflow
   app.post('/api/workflows/prd-generator', async (req: Request, res: Response) => {
     try {
