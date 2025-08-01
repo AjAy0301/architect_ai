@@ -44,7 +44,7 @@ const dummyRecentTickets: HSDGenerationResult[] = [
 
 export default function HSDGenerator() {
   const [ticketNumber, setTicketNumber] = useState("OAUS-1234");
-  const [generationResult, setGenerationResult = useState<HSDGenerationResult | null>(null);
+  const [generationResult, setGenerationResult] = useState<HSDGenerationResult | null>(null);
   const { toast } = useToast();
 
   const generateHSDMutation = useMutation({
