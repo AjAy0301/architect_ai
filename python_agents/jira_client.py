@@ -214,7 +214,8 @@ class JiraClient:
         if description:
             description = description.replace('\r\n', '\n').replace('\r', '\n')
         
-        return JiraTicketData(
+        # Create ticket data with additional fields
+        ticket_data = JiraTicketData(
             key=data.get('key', ''),
             summary=fields.get('summary', ''),
             description=description,
@@ -235,6 +236,15 @@ class JiraClient:
             epic_link=epic_link,
             sprint=sprint_info
         )
+        
+        # Add additional fields as attributes for HSD ticket creation
+        ticket_data.story_points = fields.get('customfield_10002', '')  # Story points
+        ticket_data.delivery_page = fields.get('customfield_10501', '')  # Delivery page
+        ticket_data.value_stream = fields.get('customfield_10502', '')  # Value stream
+        ticket_data.resolution = fields.get('resolution', {}).get('name', '') if fields.get('resolution') else ''
+        ticket_data.current_priority = fields.get('customfield_10003', '')  # Current Priority
+        
+        return ticket_data
     
 
     
@@ -305,11 +315,11 @@ class JiraClient:
             # Prepare detailed description from source ticket
             description = self._format_hsd_description(source_ticket_data)
             
-            # Prepare ticket data using the provided curl structure
+            # Prepare ticket data using the HSD project and curl structure
             ticket_data = {
                 "fields": {
                     "project": {
-                        "key": "DATAQA"  # Using DATAQA project as specified
+                        "key": "HSD"  # Changed to HSD project as requested
                     },
                     "summary": f"HSD Implementation: {source_ticket_data.summary}",
                     "description": description,
@@ -325,31 +335,45 @@ class JiraClient:
                         f"Source-{source_ticket_data.key}"
                     ] + (source_ticket_data.labels or []),
                     "customfield_74704": [
-                        { "value": "OneTV" }  # As specified in your curl example
+                        { "value": "OneTV" }
                     ]
                 }
             }
             
-            # Add components if available
+            # Add components if available from source ticket
             if source_ticket_data.components:
                 ticket_data["fields"]["components"] = [
                     {"name": comp.get("name", comp)} if isinstance(comp, dict) else {"name": str(comp)}
                     for comp in source_ticket_data.components
                 ]
             
-            # Add sprint if available
+            # Add sprint if available from source ticket
             if source_ticket_data.sprint:
                 ticket_data["fields"]["customfield_10015"] = source_ticket_data.sprint
+            
+            # Add story points if available (from screenshot field "Story Points: 5")
+            if hasattr(source_ticket_data, 'story_points') and source_ticket_data.story_points:
+                ticket_data["fields"]["customfield_10002"] = source_ticket_data.story_points
+            
+            # Add delivery page link if available
+            if hasattr(source_ticket_data, 'delivery_page') and source_ticket_data.delivery_page:
+                ticket_data["fields"]["customfield_10501"] = source_ticket_data.delivery_page
+            
+            # Add value stream if available
+            if hasattr(source_ticket_data, 'value_stream') and source_ticket_data.value_stream:
+                ticket_data["fields"]["customfield_10502"] = source_ticket_data.value_stream
             
             # Create the ticket
             url = f"{self.base_url}/rest/api/2/issue"
             
-            # Use the authorization from your curl example
+            # Use the authorization from the curl example
             auth_headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Basic YWpheS5rdW1hcjFAdGVsZWtvbS1kaWdpdGFsLmNvbTpSTlBJQ1NOVkdLTFc3REI2SlhBVFBXTjVQSFhLNE8zRDYzUFdZTkJVRTZTVExNRFdGRjZHMzZGSkpDVEZHTTMyQk1TUjNKWlVRSEFLU1VXRlFXVklYQkZXMk9RVDQzRk9JSVJZRklXV0xWQTZTT1JQN0ZVQkk3SEgyUTRHSVVWUA==',
                 'Cookie': 'AWSALB=atEnLmP0FtpmWzxawIrjGTzogWsZT6XGnxCPNZPAh1WZ/yms2+LxK4ACChRd+FjeVXVvqCVG2Q6f4f96JIDG6I82FWSanBrGPAfPYKr5Iyjt0PoYRYYl79tIPjWz; AWSALBCORS=atEnLmP0FtpmWzxawIrjGTzogWsZT6XGnxCPNZPAh1WZ/yms2+LxK4ACChRd+FjeVXVvqCVG2Q6f4f96JIDG6I82FWSanBrGPAfPYKr5Iyjt0PoYRYYl79tIPjWz; JSESSIONID=DC00F38EDFA051B04272753706F61940; atlassian.xsrf.token=AREI-Y2RZ-7GF0-NRGB_90f06cf67e9a41bb5c7f15285f69132eb5ab1ad1_lin; AWSALB=OJwCoFRxc/JdodBetXe/AnsAJJ9PUXetLxuGaVpcqM6ayZu6qBWz3GZvndInwBZMbVlHpL4g9ESHGgka7stUjSbufmvqhyrhiCeSriQV0Bb1T1k6A3EWG1GxGpPO; AWSALBCORS=OJwCoFRxc/JdodBetXe/AnsAJJ9PUXetLxuGaVpcqM6ayZu6qBWz3GZvndInwBZMbVlHpL4g9ESHGgka7stUjSbufmvqhyrhiCeSriQV0Bb1T1k6A3EWG1GxGpPO; JSESSIONID=A2FE62164A4587E948E008D9A72CCB3F; atlassian.xsrf.token=AREI-Y2RZ-7GF0-NRGB_6d278e44a5fcdd8e3d830cc019a925ef3f193bd4_lin'
             }
+            
+            logger.info(f"Creating HSD ticket with data: {ticket_data}")
             
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
@@ -361,6 +385,8 @@ class JiraClient:
                     timeout=30
                 )
             )
+            
+            logger.info(f"HSD ticket creation response: {response.status_code}")
             
             if response.status_code == 201:
                 created_ticket = response.json()
@@ -389,15 +415,48 @@ class JiraClient:
             f"- **Type**: {source_ticket_data.issuetype.get('name', 'N/A')}",
             f"- **Priority**: {source_ticket_data.priority}",
             f"- **Status**: {source_ticket_data.status}",
+            f"- **Resolution**: {getattr(source_ticket_data, 'resolution', 'N/A')}",
             f"- **Project**: {source_ticket_data.project.get('name', 'N/A')}",
-            "",
+            ""
+        ]
+        
+        # Add story points if available
+        if hasattr(source_ticket_data, 'story_points') and source_ticket_data.story_points:
+            description_parts.extend([
+                f"- **Story Points**: {source_ticket_data.story_points}",
+                ""
+            ])
+        
+        # Add current priority if different from main priority
+        if hasattr(source_ticket_data, 'current_priority') and source_ticket_data.current_priority:
+            description_parts.extend([
+                f"- **Current Priority**: {source_ticket_data.current_priority}",
+                ""
+            ])
+        
+        description_parts.extend([
             f"## Original Summary",
             source_ticket_data.summary,
             "",
             f"## Original Description",
             source_ticket_data.description or "No description provided",
             ""
-        ]
+        ])
+        
+        # Add delivery page information if available
+        if hasattr(source_ticket_data, 'delivery_page') and source_ticket_data.delivery_page:
+            description_parts.extend([
+                f"## Delivery Information",
+                f"- **Delivery Page**: {source_ticket_data.delivery_page}",
+                ""
+            ])
+        
+        # Add value stream information if available
+        if hasattr(source_ticket_data, 'value_stream') and source_ticket_data.value_stream:
+            description_parts.extend([
+                f"- **Value Stream**: {source_ticket_data.value_stream}",
+                ""
+            ])
         
         # Add assignee information
         if source_ticket_data.assignee:

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,11 +59,11 @@ export default function HSDGenerator() {
           engineType: 'python-langchain'
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to generate HSD ticket');
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -161,7 +160,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       <Sidebar />
-      
+
       <div className="flex-1 overflow-auto">
         {/* Header with gradient */}
         <header className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-8 shadow-xl">
@@ -261,7 +260,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
                     </div>
                     <p className="text-gray-300">{generationResult.summary}</p>
                   </div>
-                  
+
                   {/* Enhanced Description */}
                   <div>
                     <h4 className="font-semibold mb-4 text-lg flex items-center">
