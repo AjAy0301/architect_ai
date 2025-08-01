@@ -44,7 +44,7 @@ const dummyRecentTickets: HSDGenerationResult[] = [
 
 export default function HSDGenerator() {
   const [ticketNumber, setTicketNumber] = useState("OAUS-1234");
-  const [generationResult, setGenerationResult] = useState<HSDGenerationResult | null>(null);
+  const [generationResult, setGenerationResult = useState<HSDGenerationResult | null>(null);
   const { toast } = useToast();
 
   const generateHSDMutation = useMutation({
@@ -158,7 +158,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <div className="flex min-h-screen bg-black text-white">
       <Sidebar />
 
       <div className="flex-1 overflow-auto">

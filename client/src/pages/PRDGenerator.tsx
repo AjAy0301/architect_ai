@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +51,7 @@ export default function PRDGenerator() {
   const generatePRDMutation = useMutation({
     mutationFn: async (data: { description?: string; ticketId?: string; attachments?: File[] }) => {
       const formData = new FormData();
-      
+
       if (data.description) {
         formData.append('description', data.description);
       }
@@ -197,25 +196,22 @@ export default function PRDGenerator() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-pink-950 via-purple-950 to-pink-900 text-white">
+    <div className="flex min-h-screen bg-black text-white">
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
-        {/* Header with Deutsche Telekom magenta theme */}
-        <header className="bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-8 shadow-xl">
+        <header className="bg-black border-b border-pink-500 px-8 py-8">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div>
-              <h1 className="text-3xl font-bold mb-2 flex items-center">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-pink-600 font-bold text-xl">T</span>
-                </div>
+              <h1 className="text-3xl font-bold mb-2 flex items-center text-white">
+                <FileText className="w-8 h-8 mr-3 text-pink-500" />
                 PRD Generator
               </h1>
-              <p className="text-pink-100 text-lg">Create comprehensive Product Requirements Documents</p>
+              <p className="text-pink-500 text-lg">Create comprehensive Product Requirements Documents with AI</p>
             </div>
             <div className="text-right">
-              <div className="text-pink-100 text-sm">Deutsche Telekom</div>
-              <div className="text-white font-semibold">AI-Powered PRD Creation</div>
+              <div className="text-pink-500 text-sm">Powered by</div>
+              <div className="text-white font-semibold">Advanced AI Agents</div>
             </div>
           </div>
         </header>
@@ -406,7 +402,7 @@ export default function PRDGenerator() {
 
                       <div className="prose prose-invert max-w-none">
                         <h1 className="text-2xl font-bold text-pink-400 mb-4">{generatedPRD.prd_data.title}</h1>
-                        
+
                         <section className="mb-6">
                           <h2 className="text-xl font-semibold text-purple-400 mb-2">Introduction</h2>
                           <p className="text-gray-300">{generatedPRD.prd_data.introduction}</p>

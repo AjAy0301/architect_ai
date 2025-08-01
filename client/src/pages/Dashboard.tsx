@@ -83,25 +83,25 @@ export default function Dashboard() {
   const activeWorkflow = workflows?.find(w => w.status === 'running') || workflows?.[0];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-pink-950 via-purple-950 to-pink-900 text-white">
+    <div className="flex min-h-screen bg-black text-white">
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
-        <header className="bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-6 shadow-xl">
+        <header className="bg-black border-b border-pink-500 px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold flex items-center">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-pink-600 font-bold text-lg">T</span>
+                <div className="w-10 h-10 flex items-center justify-center mr-3">
+                  <img src="/deutsche-telekom-logo.svg" alt="Deutsche Telekom" className="w-8 h-8" />
                 </div>
                 Deutsche Telekom AI Dashboard
               </h1>
-              <p className="text-pink-100 mt-1">Powered by Advanced AI Agents</p>
+              <p className="text-pink-500 mt-1">Powered by Advanced AI Agents</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <div className="text-sm text-pink-200">System Status</div>
-                <div className="text-green-300 font-medium">● Online</div>
+                <div className="text-sm text-pink-500">System Status</div>
+                <div className="text-pink-500 font-medium">● Online</div>
               </div>
             </div>
           </div>
