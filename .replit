@@ -20,6 +20,15 @@ mode = "sequential"
 task = "shell.exec"
 args = "npm run dev"
 
+[[workflows.workflow]]
+name = "Start Python Agents"
+author = 45760252
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd python_agents && python start_server.py"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
