@@ -1,31 +1,23 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Route, Switch } from "wouter";
 import Dashboard from "@/pages/Dashboard";
+import OneButton from "@/pages/OneButton";
+import { Toaster } from "@/components/ui/toaster";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NotFound from "@/pages/not-found";
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="dark">
-          <Toaster />
-          <Router />
-        </div>
-      </TooltipProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/onebutton" component={OneButton} />
+          <Route component={NotFound} />
+        </Switch>
+        <Toaster />
+      </div>
     </QueryClientProvider>
   );
 }
-
-export default App;

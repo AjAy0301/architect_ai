@@ -91,7 +91,7 @@ export default function Dashboard() {
         <header className="bg-dark-secondary border-b border-gray-700 px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Multi-Agent Dashboard</h2>
+              <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
               <p className="text-gray-400 mt-1">Monitor your AI architecture automation pipeline</p>
             </div>
             <div className="flex items-center space-x-4">
@@ -114,28 +114,28 @@ export default function Dashboard() {
           {/* Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <MetricsCard
-              title="Tickets Analyzed"
+              title="Documents Processed"
               value={metrics?.ticketsProcessed || 0}
               change="+12%"
               icon={FileText}
               color="blue"
             />
             <MetricsCard
-              title="Impact Analyses"
+              title="Dependencies Mapped"
               value={metrics?.impactAnalyses || 0}
               change="+8%"
               icon={FileText}
               color="green"
             />
             <MetricsCard
-              title="Solution Designs"
+              title="PRDs Generated"
               value={metrics?.solutionArchitectures || 0}
               change="+15%"
               icon={FileText}
               color="orange"
             />
             <MetricsCard
-              title="PRDs Created"
+              title="Code Files Generated"
               value={metrics?.prdsGenerated || 0}
               change="+22%"
               icon={FileText}
@@ -185,21 +185,29 @@ export default function Dashboard() {
                   <CardTitle className="text-lg">Available Models</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {models?.map((model) => (
-                    <div key={model.name} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
-                      <div>
-                        <div className="text-sm font-medium">{model.name}</div>
-                        <div className="text-xs text-gray-400">
-                          {(model.size / (1024 * 1024 * 1024)).toFixed(1)}GB
-                        </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Ollama Service</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm text-green-400">Running</span>
                       </div>
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     </div>
-                  )) || (
-                    <div className="text-center text-gray-400 py-4">
-                      No models available
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Memory Usage</span>
+                      <span className="text-sm">69%</span>
                     </div>
-                  )}
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '69%' }}></div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Processing Queue</span>
+                      <span className="text-sm">3 jobs</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '30%' }}></div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

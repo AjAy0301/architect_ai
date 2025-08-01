@@ -71,17 +71,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/workflows", async (req, res) => {
     try {
       const { jiraTicketId, engineType = 'basic' } = req.body;
-      
+
       if (!jiraTicketId) {
         return res.status(400).json({ error: "jiraTicketId is required" });
       }
 
       let workflowId: string;
-      
+
       if (engineType === 'python-langchain') {
         // Use Python-based LangChain agents
         workflowId = await pythonAgentsClient.startWorkflow(jiraTicketId);
-        
+
         // Create a workflow record in Node.js storage for consistency
         const workflow = await storage.createWorkflow({
           jiraTicketId,
@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentAgent: 'python-jira-analyst',
           engineType: 'python-langchain',
         });
-        
+
         res.status(201).json({ ...workflow, pythonWorkflowId: workflowId });
       } else if (engineType === 'langchain') {
         // Use Node.js LangChain workflow
@@ -108,6 +108,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to start workflow",
         details: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // LangChain workflow endpoint
+  app.post('/api/workflows/langchain', async (req, res) => {
+    try {
+      const { jiraTicketId = 'AUTO-GENERATED', engineType = 'langchain' } = req.body;
+
+      // Use Node.js LangChain agents for the full flow
+      const workflowId = await langChainWorkflowEngine.startWorkflow(jiraTicketId);
+
+      res.json({ workflowId, status: 'started', engineType });
+    } catch (error) {
+      console.error('Failed to start LangChain workflow:', error);
+      res.status(500).json({ error: 'Failed to start LangChain workflow' });
     }
   });
 
@@ -136,16 +151,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/documents", async (req, res) => {
     try {
       const validatedData = insertDocumentSchema.parse(req.body);
-      
+
       const document = await storage.createDocument(validatedData);
-      
+
       // Add to vector store
       await vectorStore.addDocument({
         id: document.id,
         content: document.content,
         metadata: document.metadata || {},
       });
-      
+
       res.status(201).json(document);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -172,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!q || typeof q !== 'string') {
         return res.status(400).json({ error: "Query parameter 'q' is required" });
       }
-      
+
       const results = await vectorStore.searchSimilar(q, 10);
       res.json(results);
     } catch (error) {
@@ -211,11 +226,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket client connected');
-    
+
     // Add client to both workflow engines for real-time updates
     workflowEngine.addWebSocketClient(ws);
     langChainWorkflowEngine.addWebSocketClient(ws);
-    
+
     // Connect to Python agents WebSocket for message forwarding
     pythonAgentsClient.connectWebSocket((message) => {
       if (ws.readyState === WebSocket.OPEN) {
@@ -225,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
       }
     });
-    
+
     // Send initial connection message
     ws.send(JSON.stringify({
       type: 'connected',
@@ -248,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workflowId = req.params.id;
       const basicDiagnostics = await workflowEngine.getWorkflowStatus(workflowId);
       const langChainDiagnostics = await langChainWorkflowEngine.getWorkflowDiagnostics(workflowId);
-      
+
       res.json({
         basic: basicDiagnostics,
         langchain: langChainDiagnostics,

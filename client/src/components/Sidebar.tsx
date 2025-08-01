@@ -21,10 +21,11 @@ export function Sidebar() {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Jira Analyst', href: '/jira-analyst', icon: FlaskConical },
-    { name: 'Tech Architect', href: '/tech-architect', icon: GitBranch },
-    { name: 'Product Manager', href: '/product-manager', icon: User },
-    { name: 'Vector Store', href: '/vector-store', icon: Database },
+    { name: 'OneButton', href: '/onebutton', icon: CheckCircle },
+    { name: 'HSD Generator', href: '/hsd-generator', icon: FlaskConical },
+    { name: 'PRD Generator', href: '/prd-generator', icon: User },
+    { name: 'Code Generator', href: '/code-generator', icon: GitBranch },
+    { name: 'Architecture', href: '/architecture', icon: Database },
     { name: 'Workflows', href: '/workflows', icon: GitBranch },
   ];
 
@@ -37,7 +38,7 @@ export function Sidebar() {
             <CheckCircle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold">AI Multi-Agent</h1>
+            <h1 className="text-lg font-semibold">AI Architect</h1>
             <p className="text-sm text-gray-400">Ollama Edition</p>
           </div>
         </div>
