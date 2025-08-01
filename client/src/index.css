@@ -3,34 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 10%);
+  --muted-foreground: hsl(0, 0%, 60%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 0%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --border: hsl(322, 100%, 45%);
+  --input: hsl(0, 0%, 10%);
+  --primary: hsl(322, 100%, 45%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(0, 0%, 10%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(0, 0%, 10%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(322, 100%, 45%);
   --radius: 0.5rem;
   
-  /* Custom agent colors */
-  --agent-blue: hsl(207, 90%, 54%);
-  --agent-green: hsl(142, 76%, 36%);
-  --agent-orange: hsl(38, 92%, 50%);
-  --dark-primary: hsl(240, 10%, 3.9%);
-  --dark-secondary: hsl(240, 3.7%, 15.9%);
-  --dark-tertiary: hsl(215, 16%, 47%);
+  /* Custom theme colors */
+  --telekom-magenta: hsl(322, 100%, 45%);
+  --telekom-black: hsl(0, 0%, 0%);
+  --telekom-white: hsl(0, 0%, 100%);
+  --telekom-gray: hsl(0, 0%, 20%);
 }
 
 .light {

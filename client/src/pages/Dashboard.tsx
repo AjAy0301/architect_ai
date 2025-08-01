@@ -87,7 +87,7 @@ export default function Dashboard() {
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
-        <header className="bg-black border-b border-pink-500 px-8 py-6">
+        <header className="bg-black border-b border-[hsl(322,100%,45%)] px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold flex items-center">
@@ -96,12 +96,12 @@ export default function Dashboard() {
                 </div>
                 Deutsche Telekom AI Dashboard
               </h1>
-              <p className="text-pink-500 mt-1">Powered by Advanced AI Agents</p>
+              <p className="text-[hsl(322,100%,45%)] mt-1">Powered by Advanced AI Agents</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <div className="text-sm text-pink-500">System Status</div>
-                <div className="text-pink-500 font-medium">● Online</div>
+                <div className="text-sm text-[hsl(322,100%,45%)]">System Status</div>
+                <div className="text-[hsl(322,100%,45%)] font-medium">● Online</div>
               </div>
             </div>
           </div>

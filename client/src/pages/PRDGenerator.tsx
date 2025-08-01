@@ -200,17 +200,17 @@ export default function PRDGenerator() {
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
-        <header className="bg-black border-b border-pink-500 px-8 py-8">
+        <header className="bg-black border-b border-[hsl(322,100%,45%)] px-8 py-8">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div>
               <h1 className="text-3xl font-bold mb-2 flex items-center text-white">
-                <FileText className="w-8 h-8 mr-3 text-pink-500" />
+                <img src="/deutsche-telekom-logo.svg" alt="Deutsche Telekom" className="w-8 h-8 mr-3" />
                 PRD Generator
               </h1>
-              <p className="text-pink-500 text-lg">Create comprehensive Product Requirements Documents with AI</p>
+              <p className="text-[hsl(322,100%,45%)] text-lg">Create comprehensive Product Requirements Documents with AI</p>
             </div>
             <div className="text-right">
-              <div className="text-pink-500 text-sm">Powered by</div>
+              <div className="text-[hsl(322,100%,45%)] text-sm">Powered by</div>
               <div className="text-white font-semibold">Advanced AI Agents</div>
             </div>
           </div>
@@ -220,28 +220,28 @@ export default function PRDGenerator() {
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Input Section */}
             <div className="space-y-6">
-              <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
+              <Card className="bg-black border-[hsl(322,100%,45%)] shadow-2xl">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center text-xl">
-                    <FileText className="w-6 h-6 mr-3 text-pink-400" />
+                  <CardTitle className="flex items-center text-xl text-white">
+                    <FileText className="w-6 h-6 mr-3 text-[hsl(322,100%,45%)]" />
                     Generate PRD
                   </CardTitle>
                   <p className="text-gray-400 mt-2">Choose your input method to generate a comprehensive PRD</p>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Input Mode Selection */}
-                  <div className="flex space-x-2 bg-gray-700/30 p-1 rounded-lg">
+                  <div className="flex space-x-2 bg-gray-900 p-1 rounded-lg">
                     <Button
                       variant={inputMode === 'description' ? 'default' : 'ghost'}
                       onClick={() => setInputMode('description')}
-                      className={`flex-1 ${inputMode === 'description' ? 'bg-pink-600 hover:bg-pink-700' : 'hover:bg-gray-600'}`}
+                      className={`flex-1 ${inputMode === 'description' ? 'bg-[hsl(322,100%,45%)] hover:bg-[hsl(322,100%,35%)] text-black' : 'hover:bg-gray-700 text-white'}`}
                     >
                       Description + Attachments
                     </Button>
                     <Button
                       variant={inputMode === 'ticket' ? 'default' : 'ghost'}
                       onClick={() => setInputMode('ticket')}
-                      className={`flex-1 ${inputMode === 'ticket' ? 'bg-pink-600 hover:bg-pink-700' : 'hover:bg-gray-600'}`}
+                      className={`flex-1 ${inputMode === 'ticket' ? 'bg-[hsl(322,100%,45%)] hover:bg-[hsl(322,100%,35%)] text-black' : 'hover:bg-gray-700 text-white'}`}
                     >
                       OAUS Ticket
                     </Button>
@@ -327,7 +327,7 @@ export default function PRDGenerator() {
                   <Button 
                     onClick={handleGenerate}
                     disabled={generatePRDMutation.isPending}
-                    className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 h-12 text-lg font-medium shadow-lg"
+                    className="w-full bg-[hsl(322,100%,45%)] hover:bg-[hsl(322,100%,35%)] text-black h-12 text-lg font-medium shadow-lg"
                   >
                     {generatePRDMutation.isPending ? (
                       <>
@@ -347,11 +347,11 @@ export default function PRDGenerator() {
 
             {/* Preview Section */}
             <div className="space-y-6">
-              <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
+              <Card className="bg-black border-[hsl(322,100%,45%)] shadow-2xl">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center text-xl">
-                      <Eye className="w-6 h-6 mr-3 text-purple-400" />
+                    <CardTitle className="flex items-center text-xl text-white">
+                      <Eye className="w-6 h-6 mr-3 text-[hsl(322,100%,45%)]" />
                       PRD Preview
                     </CardTitle>
                     {generatedPRD && (

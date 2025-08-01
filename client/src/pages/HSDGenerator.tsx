@@ -162,18 +162,18 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
       <Sidebar />
 
       <div className="flex-1 overflow-auto">
-        {/* Header with gradient */}
-        <header className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-8 shadow-xl">
+        {/* Header */}
+        <header className="bg-black border-b border-[hsl(322,100%,45%)] px-8 py-8 shadow-xl">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div>
-              <h1 className="text-3xl font-bold mb-2 flex items-center">
-                <Zap className="w-8 h-8 mr-3 text-yellow-400" />
+              <h1 className="text-3xl font-bold mb-2 flex items-center text-white">
+                <img src="/deutsche-telekom-logo.svg" alt="Deutsche Telekom" className="w-8 h-8 mr-3" />
                 HSD Generator
               </h1>
-              <p className="text-blue-100 text-lg">Transform tickets with AI-powered enhanced descriptions</p>
+              <p className="text-[hsl(322,100%,45%)] text-lg">Transform tickets with AI-powered enhanced descriptions</p>
             </div>
             <div className="text-right">
-              <div className="text-blue-100 text-sm">Powered by</div>
+              <div className="text-[hsl(322,100%,45%)] text-sm">Powered by</div>
               <div className="text-white font-semibold">LangChain AI Agent</div>
             </div>
           </div>
@@ -182,10 +182,10 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
         <main className="p-8 max-w-7xl mx-auto">
           <div className="grid gap-8">
             {/* Input Section - Full Width Card */}
-            <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
+            <Card className="bg-black border-[hsl(322,100%,45%)] shadow-2xl">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center text-xl">
-                  <FileText className="w-6 h-6 mr-3 text-blue-400" />
+                <CardTitle className="flex items-center text-xl text-white">
+                  <FileText className="w-6 h-6 mr-3 text-[hsl(322,100%,45%)]" />
                   Generate Enhanced HSD Ticket
                 </CardTitle>
                 <p className="text-gray-400 mt-2">Enter a JIRA ticket number to generate an AI-enhanced HSD implementation ticket</p>
@@ -199,14 +199,14 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
                       value={ticketNumber}
                       onChange={(e) => setTicketNumber(e.target.value)}
                       placeholder="e.g., OAUS-1234"
-                      className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 h-12 text-lg"
+                      className="bg-black border-[hsl(322,100%,45%)] text-white placeholder-gray-400 h-12 text-lg"
                     />
                   </div>
                   <div className="flex items-end">
                     <Button 
                       onClick={handleGenerate}
                       disabled={generateHSDMutation.isPending}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-12 text-lg font-medium shadow-lg"
+                      className="w-full bg-[hsl(322,100%,45%)] hover:bg-[hsl(322,100%,35%)] text-black h-12 text-lg font-medium shadow-lg"
                     >
                       {generateHSDMutation.isPending ? (
                         <>
@@ -227,14 +227,14 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
 
             {/* Generation Result */}
             {generationResult && (
-              <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
+              <Card className="bg-black border-[hsl(322,100%,45%)] shadow-2xl">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center justify-between text-xl">
+                  <CardTitle className="flex items-center justify-between text-xl text-white">
                     <span className="flex items-center">
-                      <CheckCircle className="w-6 h-6 mr-3 text-green-400" />
+                      <CheckCircle className="w-6 h-6 mr-3 text-[hsl(322,100%,45%)]" />
                       Generated HSD Ticket
                     </span>
-                    <Badge className="bg-green-500/20 text-green-400 px-3 py-1">
+                    <Badge className="bg-[hsl(322,100%,45%)] text-black px-3 py-1">
                       <CheckCircle className="w-4 h-4 mr-1" />
                       Completed
                     </Badge>
@@ -310,10 +310,10 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
             )}
 
             {/* Recent HSD Tickets */}
-            <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
+            <Card className="bg-black border-[hsl(322,100%,45%)] shadow-2xl">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center text-xl">
-                  <Clock className="w-6 h-6 mr-3 text-orange-400" />
+                <CardTitle className="flex items-center text-xl text-white">
+                  <Clock className="w-6 h-6 mr-3 text-[hsl(322,100%,45%)]" />
                   Recent HSD Tickets
                 </CardTitle>
                 <p className="text-gray-400 mt-2">Previously generated HSD tickets with AI-enhanced descriptions</p>
