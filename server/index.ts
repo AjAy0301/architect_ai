@@ -60,6 +60,19 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   const port = parseInt(process.env.PORT || "5000");
+  
+  // Check Python server health
+  try {
+    const healthResponse = await fetch('http://localhost:8001/health');
+    if (healthResponse.ok) {
+      log('Python agents server is healthy');
+    } else {
+      log('Python agents server health check failed');
+    }
+  } catch (error) {
+    log('Python agents server is not available - some features may not work');
+  }
+  
   server.listen(port, "0.0.0.0", () => {
     log(`Server running on http://0.0.0.0:${port}`);
   });

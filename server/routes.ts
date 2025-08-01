@@ -273,5 +273,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // HSD Generator routes
+app.post('/api/workflows/hsd-generator', async (req, res) => {
+  try {
+    const { jiraTicketId } = req.body;
+
+    console.log(`Starting HSD generation for ticket: ${jiraTicketId}`);
+
+    // Call Python LangChain agent directly for HSD generation
+    const response = await fetch('http://localhost:8001/generate-hsd', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jira_ticket_id: jiraTicketId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Python service error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log(`HSD generation completed for ticket: ${jiraTicketId}`);
+
+    res.json(result);
+  } catch (error) {
+    console.log(`HSD generation error: ${error}`);
+    res.status(500).json({ 
+      error: 'HSD generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+app.get('/api/hsd-tickets/recent', async (req, res) => {
+  try {
+    // Get recent HSD tickets from Python service
+    const response = await fetch('http://localhost:8001/recent-hsd-tickets');
+
+    if (!response.ok) {
+      throw new Error(`Python service error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    res.json(result);
+  } catch (error) {
+    console.log(`Failed to fetch recent HSD tickets: ${error}`);
+    res.json([]); // Return empty array on error
+  }
+});
+
   return httpServer;
 }

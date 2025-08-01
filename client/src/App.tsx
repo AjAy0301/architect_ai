@@ -1,6 +1,7 @@
 import { Route, Switch } from "wouter";
 import Dashboard from "@/pages/Dashboard";
 import OneButton from "@/pages/OneButton";
+import HSDGenerator from "@/pages/HSDGenerator";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NotFound from "@/pages/not-found";
@@ -14,6 +15,7 @@ function App() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/onebutton" component={OneButton} />
+          <Route path="/hsd-generator" component={HSDGenerator} />
           <Route component={NotFound} />
         </Switch>
         <Toaster />
