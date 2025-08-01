@@ -1,0 +1,12 @@
+JiraAnalystAgent
+Role: Data ingestion, preparation, and contextualization.
+Tools: JiraAPIWrapper (for fetching ticket data), Milvus Vector Store Retriever (for RAG).
+Process: This agent takes a Jira ticket ID as its initial input. It fetches the full ticket details and constructs a rich context package. It formulates a semantic query from the ticket's description and comments, retrieves relevant historical documents from Milvus Lite, and bundles the raw ticket data and the RAG context into a structured state object that is passed along the graph.
+TechnicalArchitectAgent
+Role: Core technical reasoning, impact assessment, and solution design.
+Tools: This agent relies purely on the LLM's reasoning capabilities and does not require external tools.
+Process: This agent receives the state object from the JiraAnalystAgent. Its operation is driven by a carefully crafted prompt that utilizes Chain-of-Thought (CoT) prompting. This technique explicitly instructs the LLM to "think step-by-step," breaking down the complex problem into a sequence of manageable parts.46 For example, the prompt will guide the LLM to first identify all potentially affected system components, then analyze the nature of the impact on each component (referencing the RAG context), and finally, synthesize these findings into a coherent impact analysis document. It then repeats a similar reasoning process to devise a solution architecture.48
+ProductManagerAgent
+Role: Document synthesis, consolidation, and structured formatting.
+Tools: PydanticOutputParser.
+Process: This agent receives the complete state, including the original ticket and the outputs from the TechnicalArchitectAgent. Its prompt instructs it to adopt the persona of a product manager. Its primary goal is to consolidate all the technical details, user stories, and acceptance criteria into a formal PRD, strictly adhering to the structure defined by a Pydantic schema. This ensures the final output is not only well-written but also machine-readable and consistent.

@@ -1,0 +1,262 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import WebSocket, { WebSocketServer } from "ws";
+import { storage } from "./storage.js";
+import { workflowEngine } from "./services/workflowEngine.js";
+import { langChainWorkflowEngine } from "./services/langchain/workflowEngine.js";
+import { pythonAgentsClient } from "./services/pythonAgentsClient.js";
+import { ollamaService } from "./services/ollama.js";
+import { jiraClient } from "./services/jiraClient.js";
+import { vectorStore } from "./services/vectorStore.js";
+import { insertWorkflowSchema, insertDocumentSchema } from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check
+  app.get("/api/health", async (req, res) => {
+    try {
+      const ollamaStatus = await ollamaService.isAvailable() ? "connected" : "disconnected";
+      const jiraStatus = await jiraClient.validateConnection() ? "connected" : "disconnected";
+      const pythonAgentsStatus = await pythonAgentsClient.checkHealth() ? "connected" : "disconnected";
+
+      res.json({
+        status: "ok",
+        ollama: ollamaStatus,
+        jira: jiraStatus,
+        pythonAgents: pythonAgentsStatus,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        status: "error", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  // Get metrics
+  app.get("/api/metrics", async (req, res) => {
+    try {
+      const metrics = await storage.getMetrics();
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch metrics" });
+    }
+  });
+
+  // Get all workflows
+  app.get("/api/workflows", async (req, res) => {
+    try {
+      const workflows = await storage.getAllWorkflows();
+      res.json(workflows);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  // Get specific workflow
+  app.get("/api/workflows/:id", async (req, res) => {
+    try {
+      const workflow = await storage.getWorkflow(req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json(workflow);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow" });
+    }
+  });
+
+  // Start new workflow
+  app.post("/api/workflows", async (req, res) => {
+    try {
+      const { jiraTicketId, engineType = 'basic' } = req.body;
+      
+      if (!jiraTicketId) {
+        return res.status(400).json({ error: "jiraTicketId is required" });
+      }
+
+      let workflowId: string;
+      
+      if (engineType === 'python-langchain') {
+        // Use Python-based LangChain agents
+        workflowId = await pythonAgentsClient.startWorkflow(jiraTicketId);
+        
+        // Create a workflow record in Node.js storage for consistency
+        const workflow = await storage.createWorkflow({
+          jiraTicketId,
+          status: 'running',
+          currentAgent: 'python-jira-analyst',
+          engineType: 'python-langchain',
+        });
+        
+        res.status(201).json({ ...workflow, pythonWorkflowId: workflowId });
+      } else if (engineType === 'langchain') {
+        // Use Node.js LangChain workflow
+        workflowId = await langChainWorkflowEngine.startWorkflow(jiraTicketId);
+        const workflow = await storage.getWorkflow(workflowId);
+        res.status(201).json({ ...workflow, engineType: 'langchain' });
+      } else {
+        // Use basic workflow
+        workflowId = await workflowEngine.startWorkflow(jiraTicketId);
+        const workflow = await storage.getWorkflow(workflowId);
+        res.status(201).json({ ...workflow, engineType: 'basic' });
+      }
+    } catch (error) {
+      console.error("Error starting workflow:", error);
+      res.status(500).json({ 
+        error: "Failed to start workflow",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Get recent activities
+  app.get("/api/activities", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const activities = await storage.getActivities(limit);
+      res.json(activities);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  // Get Ollama models
+  app.get("/api/ollama/models", async (req, res) => {
+    try {
+      const models = await ollamaService.listModels();
+      res.json(models);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch Ollama models" });
+    }
+  });
+
+  // Upload documents to vector store
+  app.post("/api/documents", async (req, res) => {
+    try {
+      const validatedData = insertDocumentSchema.parse(req.body);
+      
+      const document = await storage.createDocument(validatedData);
+      
+      // Add to vector store
+      await vectorStore.addDocument({
+        id: document.id,
+        content: document.content,
+        metadata: document.metadata || {},
+      });
+      
+      res.status(201).json(document);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid document data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create document" });
+    }
+  });
+
+  // Get all documents
+  app.get("/api/documents", async (req, res) => {
+    try {
+      const documents = await storage.getAllDocuments();
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  // Search documents
+  app.get("/api/documents/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Query parameter 'q' is required" });
+      }
+      
+      const results = await vectorStore.searchSimilar(q, 10);
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to search documents" });
+    }
+  });
+
+  // Export workflow documents
+  app.get("/api/workflows/:id/export", async (req, res) => {
+    try {
+      const workflow = await storage.getWorkflow(req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+
+      const exportData = {
+        workflow,
+        impactAnalysis: workflow.impactAnalysis,
+        solutionArchitecture: workflow.solutionArchitecture,
+        prd: workflow.prd,
+        exportedAt: new Date().toISOString(),
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="workflow-${workflow.id}-export.json"`);
+      res.json(exportData);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export workflow" });
+    }
+  });
+
+  const httpServer = createServer(app);
+
+  // WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('WebSocket client connected');
+    
+    // Add client to both workflow engines for real-time updates
+    workflowEngine.addWebSocketClient(ws);
+    langChainWorkflowEngine.addWebSocketClient(ws);
+    
+    // Connect to Python agents WebSocket for message forwarding
+    pythonAgentsClient.connectWebSocket((message) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          ...message,
+          source: 'python-agents'
+        }));
+      }
+    });
+    
+    // Send initial connection message
+    ws.send(JSON.stringify({
+      type: 'connected',
+      message: 'WebSocket connection established',
+      capabilities: ['basic-workflow', 'langchain-workflow', 'python-langchain-workflow'],
+    }));
+
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+
+  // Enhanced workflow diagnostics endpoint
+  app.get("/api/workflows/:id/diagnostics", async (req, res) => {
+    try {
+      const workflowId = req.params.id;
+      const basicDiagnostics = await workflowEngine.getWorkflowStatus(workflowId);
+      const langChainDiagnostics = await langChainWorkflowEngine.getWorkflowDiagnostics(workflowId);
+      
+      res.json({
+        basic: basicDiagnostics,
+        langchain: langChainDiagnostics,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get workflow diagnostics" });
+    }
+  });
+
+  return httpServer;
+}

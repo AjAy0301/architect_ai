@@ -1,0 +1,230 @@
+Implementing the Agentic Workflow with LangChain
+
+The core of the application logic resides in the LangGraph implementation. The following snippets illustrate the key concepts.
+
+3.2.1 Defining the Graph State
+
+The state is a central object that is passed between all nodes in the graph. It accumulates data as the workflow progresses. A TypedDict is a convenient way to define this structure.
+
+Python
+
+
+from typing import TypedDict, List, Dict, Any
+
+class WorkflowState(TypedDict):
+    jira_ticket_id: str
+    jira_ticket_data: Dict[str, Any]
+    rag_context: List[str]
+    impact_analysis: str
+    solution_architecture: str
+    prd: Dict[str, Any] # Will hold the parsed Pydantic object
+    error: str
+
+
+
+3.2.2 Implementing the Agent Nodes
+
+Each agent is a function (or node) that takes the current state as input and returns a dictionary to update the state.
+JiraAnalystAgent Node:
+
+Python
+
+
+from langchain_community.utilities.jira import JiraAPIWrapper
+from langchain_community.vectorstores import Milvus
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# Assume vector_store is already initialized and populated with documents
+# vector_store = Milvus(...) 
+
+def jira_analyst_node(state: WorkflowState) -> dict:
+    """Fetches Jira ticket and retrieves RAG context."""
+    try:
+        jira_wrapper = JiraAPIWrapper()
+        ticket_id = state["jira_ticket_id"]
+        
+        # Using the underlying jira object to get full issue details
+        issue = jira_wrapper.jira.issue(ticket_id)
+        ticket_data = issue.raw['fields']
+        ticket_data['key'] = issue.key
+        
+        # Formulate a query for RAG
+        description = ticket_data.get('description', '')
+        summary = ticket_data.get('summary', '')
+        query = f"{summary}\n\n{description}"
+        
+        # Retrieve context from Milvus Lite
+        retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+        retrieved_docs = retriever.invoke(query)
+        rag_context = [doc.page_content for doc in retrieved_docs]
+        
+        return {
+            "jira_ticket_data": ticket_data,
+            "rag_context": rag_context
+        }
+    except Exception as e:
+        return {"error": f"Jira Analyst failed: {e}"}
+
+
+TechnicalArchitectAgent Node (with Chain-of-Thought Prompting):
+
+Python
+
+
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatOllama
+
+llm = ChatOllama(model="deepseek-coder-v2:16b-lite-instruct-q4_K_M")
+
+# A prompt template that guides the LLM to think step-by-step
+architect_prompt_template = """
+You are a world-class Staff Software Architect. Your task is to analyze a Jira ticket and provide a detailed impact analysis and a high-level solution architecture.
+
+**Jira Ticket Details:**
+Summary: {summary}
+Description: {description}
+Acceptance Criteria: {acceptance_criteria}
+
+**Context from Previous Releases:**
+{rag_context}
+
+**Your Task:**
+First, generate an **Impact Analysis**. Think step-by-step:
+1.  Identify all system components, services, or modules potentially affected by this change.
+2.  For each component, describe the nature of the impact (e.g., database schema change, API modification, UI update).
+3.  Assess the risk level (Low, Medium, High) for each impact and provide a brief justification.
+4.  Identify any dependencies on other teams or services.
+
+Second, based on your impact analysis, generate a **Solution Architecture**.
+1.  Outline the proposed technical solution at a high level.
+2.  Describe any new components, database changes, or API endpoints required.
+3.  Provide a sequence diagram or a clear description of the data flow if applicable.
+4.  Mention any key technologies, libraries, or patterns that should be used.
+
+Respond with two distinct sections in Markdown format: '## Impact Analysis' and '## Solution Architecture'.
+"""
+
+architect_prompt = ChatPromptTemplate.from_template(architect_prompt_template)
+architect_chain = architect_prompt | llm
+
+def technical_architect_node(state: WorkflowState) -> dict:
+    """Generates impact analysis and solution architecture."""
+    try:
+        ticket_data = state["jira_ticket_data"]
+        rag_context = "\n---\n".join(state["rag_context"])
+        
+        response = architect_chain.invoke({
+            "summary": ticket_data.get("summary", "N/A"),
+            "description": ticket_data.get("description", "N/A"),
+            "acceptance_criteria": ticket_data.get("customfield_10025", "N/A"), # Example custom field
+            "rag_context": rag_context
+        })
+        
+        content = response.content
+        # Simple parsing based on headers
+        impact_analysis = content.split("## Solution Architecture")
+        solution_architecture = "## Solution Architecture" + content.split("## Solution Architecture")
+        
+        return {
+            "impact_analysis": impact_analysis,
+            "solution_architecture": solution_architecture
+        }
+    except Exception as e:
+        return {"error": f"Technical Architect failed: {e}"}
+
+
+
+3.3 Generating Structured and High-Quality Outputs with Pydantic
+
+To ensure the PRD is not just a block of text but a structured, usable document, we use LangChain's PydanticOutputParser. This is one of the most effective techniques for controlling LLM output and making it programmatically reliable.44
+Implementation Steps:
+Define the Pydantic Schema: Create a Python class that inherits from pydantic.BaseModel. This class defines the exact structure and data types of the desired PRD. The Field descriptions are crucial, as they provide instructions to the LLM on what to populate in each field.
+Create the Parser: Instantiate PydanticOutputParser with the custom Pydantic model.
+Inject Instructions: The parser provides formatting instructions (parser.get_format_instructions()) that must be included in the prompt template. This tells the LLM to output a JSON object that conforms to the schema.
+Chain the Parser: The final step in the agent's chain is to pipe the LLM's output through the parser, which automatically validates the JSON and converts it into a Python object.
+Field Name
+Type Hint
+Description for LLM
+title
+str
+The title of the feature or change described in the Jira ticket.
+introduction
+str
+A brief, one-paragraph overview of the project's purpose and goals.
+problem_statement
+str
+A clear and concise description of the problem this change is solving.
+user_stories
+List[str]
+A list of user stories in the format "As a [user type], I want [goal] so that [benefit]".
+technical_requirements
+List[str]
+A list of specific technical requirements derived from the solution architecture.
+non_functional_requirements
+Dict[str, str]
+A dictionary of non-functional requirements, with keys like 'Performance', 'Security', 'Scalability'.
+out_of_scope
+List[str]
+A list of items that are explicitly not part of this project.
+success_metrics
+List[str]
+A list of quantifiable metrics that will be used to measure the success of this feature.
+
+Table 2: PRD Pydantic Schema Definition
+ProductManagerAgent Node Implementation:
+
+Python
+
+
+from pydantic import BaseModel, Field
+from langchain.output_parsers import PydanticOutputParser
+
+class PRD(BaseModel):
+    title: str = Field(description="The title of the feature or change described in the Jira ticket.")
+    introduction: str = Field(description="A brief, one-paragraph overview of the project's purpose and goals.")
+    problem_statement: str = Field(description="A clear and concise description of the problem this change is solving.")
+    user_stories: List[str] = Field(description="A list of user stories in the format 'As a [user type], I want [goal] so that [benefit]'.")
+    technical_requirements: List[str] = Field(description="A list of specific technical requirements derived from the solution architecture.")
+    non_functional_requirements: Dict[str, str] = Field(description="A dictionary of non-functional requirements, with keys like 'Performance', 'Security', 'Scalability'.")
+    out_of_scope: List[str] = Field(description="A list of items that are explicitly not part of this project.")
+    success_metrics: List[str] = Field(description="A list of quantifiable metrics that will be used to measure the success of this feature.")
+
+# Set up the parser
+parser = PydanticOutputParser(pydantic_object=PRD)
+
+prd_prompt_template = """
+You are a Senior Product Manager. Your task is to create a comprehensive Product Requirements Document (PRD) based on the provided Jira ticket, impact analysis, and solution architecture.
+
+**Jira Ticket:**
+{summary}
+
+**Impact Analysis:**
+{impact_analysis}
+
+**Solution Architecture:**
+{solution_architecture}
+
+Please generate the PRD by filling out the following JSON schema.
+{format_instructions}
+"""
+
+prd_prompt = ChatPromptTemplate.from_template(
+    prd_prompt_template,
+    partial_variables={"format_instructions": parser.get_format_instructions()}
+)
+
+# The final chain for this agent includes the parser
+prd_chain = prd_prompt | llm | parser
+
+def product_manager_node(state: WorkflowState) -> dict:
+    """Generates a structured PRD document."""
+    try:
+        prd_object = prd_chain.invoke({
+            "summary": state["jira_ticket_data"].get("summary", "N/A"),
+            "impact_analysis": state["impact_analysis"],
+            "solution_architecture": state["solution_architecture"]
+        })
+        return {"prd": prd_object.dict()}
+    except Exception as e:
+        return {"error": f"Product Manager failed: {e}"}
