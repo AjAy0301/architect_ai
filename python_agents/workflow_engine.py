@@ -77,18 +77,65 @@ class PythonWorkflowEngine:
             
             # Update state with analyst results
             state.update(analyst_result)
-            state['currentAgent'] = 'completed'  # Mark as completed
             
-            if progress_callback:
-                await progress_callback(AgentProgress(
-                    workflow_id=workflow_id,
-                    agent='jira-analyst',
-                    message='Ticket data fetch and Excel export completed',
-                    progress=100,
-                    completed=True
-                ))
-            
-            # Skip other agents - only do data fetch and Excel export
+            # Check if we should continue or just do Excel export
+            if analyst_result.get('current_step') == 'completed':
+                # Only Excel export mode
+                state['currentAgent'] = 'completed'
+                
+                if progress_callback:
+                    await progress_callback(AgentProgress(
+                        workflow_id=workflow_id,
+                        agent='jira-analyst',
+                        message='Ticket data fetch and Excel export completed',
+                        progress=100,
+                        completed=True
+                    ))
+            else:
+                # Continue with full workflow
+                state['currentAgent'] = 'tech-architect'
+                
+                # Step 2: Technical Architect Agent
+                print(f"[Python] Executing TechnicalArchitectAgent for workflow {workflow_id}")
+                
+                async def architect_progress(agent: str, message: str, progress: int):
+                    if progress_callback:
+                        await progress_callback(AgentProgress(
+                            workflow_id=workflow_id,
+                            agent=agent,
+                            message=message,
+                            progress=progress
+                        ))
+                
+                architect_result = await technical_architect_agent.execute(state, architect_progress)
+                
+                if architect_result.get('error'):
+                    raise Exception(architect_result['error'])
+                
+                # Update state with architect results
+                state.update(architect_result)
+                state['currentAgent'] = 'product-manager'
+                
+                # Step 3: Product Manager Agent
+                print(f"[Python] Executing ProductManagerAgent for workflow {workflow_id}")
+                
+                async def pm_progress(agent: str, message: str, progress: int):
+                    if progress_callback:
+                        await progress_callback(AgentProgress(
+                            workflow_id=workflow_id,
+                            agent=agent,
+                            message=message,
+                            progress=progress
+                        ))
+                
+                pm_result = await product_manager_agent.execute(state, pm_progress)
+                
+                if pm_result.get('error'):
+                    raise Exception(pm_result['error'])
+                
+                # Update state with PM results
+                state.update(pm_result)
+                state['currentAgent'] = 'completed'
             
             # Workflow completed successfully
             state['current_step'] = 'completed'

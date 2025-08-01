@@ -21,8 +21,10 @@ from prompts import (
 )
 from vector_store import vector_store
 from jira_client import jira_client
-# from ticket_document_manager import ticket_doc_manager  # Removed - not needed for Excel export only
 from jira_export_tool import get_jira_details_to_excel
+from document_processor import document_processor
+from confluence_client import confluence_client
+from mermaid_generator import mermaid_generator
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +135,7 @@ class LangChainTechnicalArchitectAgent:
         self.architect_chain = architect_prompt | self.llm | StrOutputParser()
     
     async def execute(self, state: WorkflowState, progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
-        """Execute technical architect workflow with Chain-of-Thought reasoning"""
+        """Execute technical architect workflow with Chain-of-Thought reasoning and Mermaid generation"""
         try:
             if progress_callback:
                 await progress_callback("tech-architect", "Starting impact analysis...", 20)
@@ -147,7 +149,7 @@ class LangChainTechnicalArchitectAgent:
             rag_context = state.get('rag_context', [])
             
             if progress_callback:
-                await progress_callback("tech-architect", "Analyzing impact with Chain-of-Thought reasoning...", 60)
+                await progress_callback("tech-architect", "Analyzing impact with Chain-of-Thought reasoning...", 40)
             
             # Handle components that might be dictionaries
             components_list = []
@@ -172,13 +174,33 @@ class LangChainTechnicalArchitectAgent:
             sections = self._parse_architect_response(response)
             
             if progress_callback:
+                await progress_callback("tech-architect", "Generating architecture diagrams...", 70)
+            
+            # Generate Mermaid diagrams
+            print('[LangChain] TechnicalArchitectAgent: Generating Mermaid diagrams')
+            
+            # Create components for diagram generation
+            components_for_diagram = [
+                {"name": comp, "type": "service", "description": f"Component: {comp}"}
+                for comp in components_list[:5]  # Limit to 5 components
+            ]
+            
+            # Generate architecture diagram
+            architecture_diagram = mermaid_generator.generate_architecture_diagram(components_for_diagram)
+            
+            if progress_callback:
                 await progress_callback("tech-architect", "Impact analysis and solution architecture completed", 100)
             
-            print('[LangChain] TechnicalArchitectAgent: Generated comprehensive analysis')
+            print('[LangChain] TechnicalArchitectAgent: Generated comprehensive analysis with diagrams')
             
             return {
                 'impact_analysis': sections['impact_analysis'],
                 'solution_architecture': sections['solution_architecture'],
+                'architecture_diagram': {
+                    'title': architecture_diagram.title,
+                    'mermaidCode': architecture_diagram.chart,
+                    'description': architecture_diagram.description
+                },
                 'current_step': 'product_manager',
             }
         
@@ -230,12 +252,12 @@ class LangChainProductManagerAgent:
 Ensure the JSON is valid and complete. Do not include any text before or after the JSON object."""
     
     async def execute(self, state: WorkflowState, progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
-        """Execute product manager workflow with Pydantic validation"""
+        """Execute product manager workflow with PRD, Mermaid diagrams, and Confluence posting"""
         try:
             if progress_callback:
-                await progress_callback("product-manager", "Starting PRD generation...", 30)
+                await progress_callback("product-manager", "Starting PRD generation...", 20)
             
-            print('[LangChain] ProductManagerAgent: Generating structured PRD')
+            print('[LangChain] ProductManagerAgent: Generating structured PRD with diagrams')
             
             if not all(key in state for key in ['jira_ticket_data', 'impact_analysis', 'solution_architecture']):
                 raise Exception('Required data not available for PRD generation')
@@ -243,7 +265,7 @@ Ensure the JSON is valid and complete. Do not include any text before or after t
             jira_ticket_data = state['jira_ticket_data']
             
             if progress_callback:
-                await progress_callback("product-manager", "Generating comprehensive PRD with structured validation...", 70)
+                await progress_callback("product-manager", "Generating comprehensive PRD with structured validation...", 40)
             
             response = await self.prd_chain.ainvoke({
                 'summary': jira_ticket_data['summary'],
@@ -257,32 +279,97 @@ Ensure the JSON is valid and complete. Do not include any text before or after t
             # Parse and validate the structured response
             prd_data = self._parse_structured_response(response)
             
-            # Process all ticket documents including attachments and PRD
             if progress_callback:
-                await progress_callback("product-manager", "Processing ticket documents and attachments...", 85)
+                await progress_callback("product-manager", "Generating Mermaid diagrams...", 60)
             
-            ticket_folder = await ticket_doc_manager.process_ticket_documents(
-                jira_ticket_data, 
-                prd_data
+            # Generate Mermaid diagrams from PRD
+            print('[LangChain] ProductManagerAgent: Generating Mermaid diagrams')
+            
+            diagrams = []
+            
+            # Generate sequence diagrams from user stories
+            for i, user_story in enumerate(prd_data.get('user_stories', [])[:3]):  # Limit to 3 diagrams
+                sequence_diagram = mermaid_generator.generate_sequence_diagram(user_story)
+                diagrams.append({
+                    'title': f"User Story {i + 1} Flow",
+                    'description': user_story,
+                    'mermaidCode': sequence_diagram.chart,
+                    'type': 'sequence'
+                })
+            
+            # Generate workflow diagram
+            workflow_diagram = mermaid_generator.generate_workflow_diagram(prd_data.get('user_stories', []))
+            diagrams.append({
+                'title': workflow_diagram.title,
+                'description': workflow_diagram.description,
+                'mermaidCode': workflow_diagram.chart,
+                'type': 'workflow'
+            })
+            
+            # Add architecture diagram if available
+            if 'architecture_diagram' in state:
+                diagrams.append({
+                    'title': state['architecture_diagram']['title'],
+                    'description': state['architecture_diagram']['description'],
+                    'mermaidCode': state['architecture_diagram']['mermaidCode'],
+                    'type': 'architecture'
+                })
+            
+            if progress_callback:
+                await progress_callback("product-manager", "Creating comprehensive document...", 70)
+            
+            # Process document with all components
+            architecture_document = await document_processor.process_prd_document(prd_data, jira_ticket_data)
+            
+            if progress_callback:
+                await progress_callback("product-manager", "Posting to Confluence...", 85)
+            
+            # Post to Confluence
+            print('[LangChain] ProductManagerAgent: Posting to Confluence')
+            
+            confluence_title = f"PRD: {prd_data.get('title', jira_ticket_data['summary'])}"
+            
+            # Create enhanced content with diagrams
+            confluence_content = architecture_document.content
+            
+            # Add diagrams section
+            confluence_content += "\n\n## Architecture Diagrams\n\n"
+            for diagram in diagrams:
+                confluence_content += f"### {diagram['title']}\n"
+                confluence_content += f"{diagram['description']}\n\n"
+                confluence_content += "```mermaid\n"
+                confluence_content += diagram['mermaidCode']
+                confluence_content += "\n```\n\n"
+            
+            confluence_result = await confluence_client.create_page(
+                title=confluence_title,
+                content=confluence_content
             )
             
             if progress_callback:
-                await progress_callback("product-manager", "Creating DATADEV ticket for implementation...", 90)
+                await progress_callback("product-manager", "Creating DATADEV ticket for implementation...", 95)
             
-            # Create DATADEV ticket
-            datadev_ticket_key = await jira_client.create_datadev_ticket(
-                prd_data, 
-                jira_ticket_data['key'], 
-                JiraTicketData(**jira_ticket_data)
-            )
+            # Create DATADEV ticket with enhanced information
+            try:
+                datadev_ticket_key = await jira_client.create_datadev_ticket(
+                    prd_data, 
+                    jira_ticket_data['key'], 
+                    JiraTicketData(**jira_ticket_data)
+                )
+            except Exception as e:
+                print(f'[LangChain] Warning: DATADEV ticket creation failed: {e}')
+                datadev_ticket_key = None
             
             if progress_callback:
-                await progress_callback("product-manager", "Structured PRD document generated and DATADEV ticket created", 100)
+                await progress_callback("product-manager", "PRD document with diagrams completed and posted to Confluence", 100)
             
-            print(f'[LangChain] ProductManagerAgent: Generated PRD and created DATADEV ticket: {datadev_ticket_key}')
+            print(f'[LangChain] ProductManagerAgent: Generated PRD with {len(diagrams)} diagrams, posted to Confluence')
             
             return {
                 'prd': prd_data,
+                'architecture_document': architecture_document.__dict__,
+                'mermaid_diagrams': diagrams,
+                'confluence_result': confluence_result,
                 'datadev_ticket_key': datadev_ticket_key,
                 'current_step': 'completed',
             }
