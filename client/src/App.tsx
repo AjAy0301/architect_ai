@@ -6,6 +6,8 @@ import OneButton from "@/pages/OneButton";
 import HSDGenerator from "@/pages/HSDGenerator";
 import PRDGenerator from "@/pages/PRDGenerator";
 import CodeGeneratorArchitecture from "./pages/CodeGeneratorArchitecture";
+import Architecture from "./pages/Architecture";
+import Workflows from "./pages/Workflows";
 import NotFound from "@/pages/not-found";
 import { queryClient } from "@/lib/queryClient";
 
@@ -18,6 +20,8 @@ function App() {
         <Route path="/hsd-generator" component={HSDGenerator} />
         <Route path="/prd-generator" component={PRDGenerator} />
         <Route path="/code-architecture" component={CodeGeneratorArchitecture} />
+        <Route path="/architecture" component={Architecture} />
+        <Route path="/workflows" component={Workflows} />
         <Route component={NotFound} />
       </Switch>
       <Toaster />

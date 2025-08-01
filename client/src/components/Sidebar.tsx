@@ -24,7 +24,7 @@ export function Sidebar() {
     { name: 'OneButton', href: '/onebutton', icon: CheckCircle },
     { name: 'HSD Generator', href: '/hsd-generator', icon: FlaskConical },
     { name: 'PRD Generator', href: '/prd-generator', icon: FileText },
-    { name: 'Code Generator', href: '/code-generator', icon: GitBranch },
+    { name: 'Code Generator', href: '/code-architecture', icon: GitBranch },
     { name: 'Architecture', href: '/architecture', icon: Database },
     { name: 'Workflows', href: '/workflows', icon: GitBranch },
   ];
