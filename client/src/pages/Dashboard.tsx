@@ -34,7 +34,7 @@ export default function Dashboard() {
     const engineName = engineType === 'python-langchain' ? 'Python LangChain'
                       : engineType === 'langchain' ? 'Node.js LangChain' 
                       : 'Basic';
-    
+
     switch (message.type) {
       case 'workflow_started':
       case 'langchain_workflow_started':
@@ -83,28 +83,26 @@ export default function Dashboard() {
   const activeWorkflow = workflows?.find(w => w.status === 'running') || workflows?.[0];
 
   return (
-    <div className="flex h-screen bg-dark-primary text-white">
+    <div className="flex min-h-screen bg-gradient-to-br from-pink-950 via-purple-950 to-pink-900 text-white">
       <Sidebar />
-      
+
       <div className="flex-1 overflow-auto">
-        {/* Header */}
-        <header className="bg-dark-secondary border-b border-gray-700 px-8 py-6">
+        <header className="bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
-              <p className="text-gray-400 mt-1">Monitor your AI architecture automation pipeline</p>
+              <h1 className="text-2xl font-bold flex items-center">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-pink-600 font-bold text-lg">T</span>
+                </div>
+                Deutsche Telekom AI Dashboard
+              </h1>
+              <p className="text-pink-100 mt-1">Powered by Advanced AI Agents</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className={`flex items-center space-x-2 ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
-                <span className="text-sm">{isConnected ? 'Connected' : 'Disconnected'}</span>
+              <div className="text-right">
+                <div className="text-sm text-pink-200">System Status</div>
+                <div className="text-green-300 font-medium">● Online</div>
               </div>
-              <Button variant="outline" size="sm">
-                <Upload className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4" />
-              </Button>
             </div>
           </div>
         </header>
@@ -164,12 +162,12 @@ export default function Dashboard() {
                       New Jira Analysis
                     </Button>
                   </JiraAnalysisModal>
-                  
+
                   <Button className="w-full bg-agent-green hover:bg-green-600">
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Documents
                   </Button>
-                  
+
                   <Button className="w-full bg-agent-orange hover:bg-yellow-600">
                     <Download className="w-4 h-4 mr-2" />
                     Export Reports

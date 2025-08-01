@@ -325,5 +325,113 @@ app.get('/api/hsd-tickets/recent', async (req, res) => {
   }
 });
 
+  // HSD Generator workflow
+  app.post('/api/workflows/hsd-generator', async (req: Request, res: Response) => {
+    try {
+      const { jiraTicketId, engineType = 'python-langchain' } = req.body;
+
+      if (!jiraTicketId) {
+        return res.status(400).json({ error: 'Jira ticket ID is required' });
+      }
+
+      console.log(`Starting HSD generation for ticket: ${jiraTicketId} using ${engineType}`);
+
+      if (engineType === 'python-langchain') {
+        // Use Python LangChain agents
+        const result = await pythonAgentsClient.executeWorkflow('hsd-generator', {
+          jiraTicketId,
+          engineType
+        });
+
+        res.json(result);
+      } else {
+        // Use Node.js LangChain agents (fallback)
+        const workflowId = uuidv4();
+
+        const initialState: WorkflowState = {
+          workflowId,
+          jiraTicketId,
+          currentStep: 'jira-analyst',
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await storage.saveWorkflowState(workflowId, initialState);
+
+        const context: AgentContext = {
+          workflowId,
+          broadcast: (message) => {
+            console.log(`Broadcasting: ${JSON.stringify(message)}`);
+          },
+        };
+
+        const result = await langChainWorkflowEngine.executeWorkflow(initialState, context);
+        res.json(result);
+      }
+    } catch (error) {
+      console.error('HSD Generator workflow error:', error);
+      res.status(500).json({ 
+        error: 'HSD generation failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // PRD Generator workflow
+  app.post('/api/workflows/prd-generator', async (req: Request, res: Response) => {
+    try {
+      const { description, ticketId, engineType = 'python-langchain' } = req.body;
+
+      if (!description && !ticketId) {
+        return res.status(400).json({ error: 'Either description or ticket ID is required' });
+      }
+
+      console.log(`Starting PRD generation using ${engineType}`);
+
+      if (engineType === 'python-langchain') {
+        // Use Python LangChain agents
+        const result = await pythonAgentsClient.executeWorkflow('prd-generator', {
+          description,
+          ticketId,
+          engineType
+        });
+
+        res.json(result);
+      } else {
+        // Use Node.js LangChain agents (fallback)
+        const workflowId = uuidv4();
+
+        const initialState: WorkflowState = {
+          workflowId,
+          jiraTicketId: ticketId,
+          description,
+          currentStep: 'product-manager',
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await storage.saveWorkflowState(workflowId, initialState);
+
+        const context: AgentContext = {
+          workflowId,
+          broadcast: (message) => {
+            console.log(`Broadcasting: ${JSON.stringify(message)}`);
+          },
+        };
+
+        const result = await langChainWorkflowEngine.executeWorkflow(initialState, context);
+        res.json(result);
+      }
+    } catch (error) {
+      console.error('PRD Generator workflow error:', error);
+      res.status(500).json({ 
+        error: 'PRD generation failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   return httpServer;
 }

@@ -127,7 +127,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
 
 ### Success Criteria
 - All acceptance criteria met
-- Performance benchmarks achieved
+-Performance benchmarks achieved
 - Security review passed
 - Documentation complete`,
       hsd_ticket_key: `HSD-${Math.floor(Math.random() * 9000) + 1000}`,
@@ -182,7 +182,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
         <main className="p-8 max-w-7xl mx-auto">
           <div className="grid gap-8">
             {/* Input Section - Full Width Card */}
-            <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm shadow-2xl">
+            <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center text-xl">
                   <FileText className="w-6 h-6 mr-3 text-blue-400" />
@@ -227,7 +227,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
 
             {/* Generation Result */}
             {generationResult && (
-              <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center justify-between text-xl">
                     <span className="flex items-center">
@@ -310,7 +310,7 @@ This ticket has been analyzed using our LangChain-powered AI system to provide c
             )}
 
             {/* Recent HSD Tickets */}
-            <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm shadow-2xl">
+            <Card className="bg-gray-800/50 border-pink-500/30 backdrop-blur-sm shadow-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center text-xl">
                   <Clock className="w-6 h-6 mr-3 text-orange-400" />
